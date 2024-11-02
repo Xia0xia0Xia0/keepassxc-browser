@@ -97,6 +97,25 @@ if (document.body) {
     kpxcUI.bodyStyle = getComputedStyle(document.body);
 }
 
+// check chromium version >= 128 via getHighEntropyValues()
+(async function() {
+	kpxcUI.browserVerUpon128 = await (async function () {
+	  let version;
+	  await navigator.userAgentData?.getHighEntropyValues(["fullVersionList"]).then(uad => {
+		const list = uad.fullVersionList;
+		if (list?.[0]) {
+		  [, version] = list
+			.map(({ brand, version: v }) => (/[^\sa-z]/i.test(brand) ? "9" : brand === "Chromium" ? "5" + brand : "1" + brand) + "\n" + v)
+			.sort()[0]
+			.slice(1)
+			.split("\n");
+		}
+	  });
+	  if (!version) version = navigator.userAgent.match(/\s(?:Chrom(?:e|ium)|Firefox)\/(\d+[.0-9]*)|$/i)[1];
+	  return parseFloat(version) >= 128;
+	})();
+})();
+
 // Wrapper for creating elements
 kpxcUI.createElement = function(type, classes, attributes, textContent) {
     const element = document.createElement(type);
@@ -155,8 +174,9 @@ kpxcUI.setIconPosition = function(icon, field, rtl = false, segmented = false) {
     const size = Number(icon.getAttribute('size'));
     const offset = kpxcUI.calculateIconOffset(field, size);
     const zoom = kpxcUI.bodyStyle.zoom || 1;
-    let left = kpxcUI.getRelativeLeftPosition(rect) / zoom;
-    let top = kpxcUI.getRelativeTopPosition(rect) / zoom;
+	const uZoom = kpxcUI.browserVerUpon128 ? zoom: 1;
+    let left = kpxcUI.getRelativeLeftPosition(rect) / uZoom;
+    let top = kpxcUI.getRelativeTopPosition(rect) / uZoom;
 
     // Add more space for the icon to show it at the right side of the field if TOTP fields are segmented
     if (segmented) {
