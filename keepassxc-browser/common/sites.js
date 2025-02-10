@@ -39,6 +39,7 @@ const IMPROVED_DETECTION_PREDEFINED_SITELIST = [
     'https://login.qt.io/login',
     'https://secure.chase.com/*',
     'https://www.reddit.com/',
+    'https://old.reddit.com/login/*',
     'https://www.icloud.com/'
 ];
 
@@ -99,6 +100,16 @@ kpxcSites.exceptionFound = function(identifier, field) {
     }
 
     return false;
+};
+
+// Forbids using Shadow DOM query with some sites unless a login dialog has been identified
+kpxcSites.isShadowDomQueryAllowed = function(nodeName) {
+    if (document.location.href?.startsWith('https://www.reddit.com')
+        && nodeName !== 'BODY'
+        && !document.querySelector('auth-flow-manager[step-name=login]')) {
+        return false;
+    }
+    return true;
 };
 
 /**
